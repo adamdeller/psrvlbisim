@@ -54,7 +54,12 @@ if __name__ == "__main__":
 
     # Now go through the observations with a for loop, adding a random offset to each one using the "addUncertainty" method
     rng = default_rng() # rng is your random number generator.  See e.g. https://numpy.org/doc/stable/reference/random/index.html for how to use it.
+
     # This part is for you
+    for obs in obslist:
+        rg1 = rng.random() #picks a random offset for the RA
+        rg2 = rng.random() #picks a random offset for the Dec
+        obs.perturbposition(args.extent*rg1, args.extent*rg2)
 
     # Then write the result back out - first all the "otherlines", then each observation, using the to_string() method
     perturbedout = open(args.pmparfile[0] + ".perturbed", "w")
