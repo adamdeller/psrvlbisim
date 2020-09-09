@@ -65,7 +65,7 @@ if __name__ == "__main__":
     for obs in obslist:
         rg1 = rng.random() #picks a random offset for the RA
         rg2 = rng.random() #picks a random offset for the Dec
-        obs.perturbposition(args.statisticalsigma*rg1, args.statisticalsigmadec*rg2)
+        obs.perturbposition(args.statisticalsigmara*rg1, args.statisticalsigmadec*rg2)
         obs.setUncertainty(args.statisticalsigmara, args.statisticalsigmadec)
 
     # Then write the result back out - first all the "otherlines", then each observation, using the to_string() method
