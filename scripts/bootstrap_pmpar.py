@@ -1,4 +1,5 @@
 """
+you can streamline it with it code. the functionality can be tested in ipython.
 1. import bootstrap_pmpar.py
 2. run bootstrap_pmpar.bootstrap_pmpar()\
     according to its usage help (bootstrap_pmpar will call the two other functions).
