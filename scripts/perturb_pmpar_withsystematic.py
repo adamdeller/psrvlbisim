@@ -17,11 +17,11 @@ class Observation:
         self.position = SkyCoord(self.position.ra + deltaramas*u.mas, self.position.dec + deltadecmas * u.mas)
 
     def addUncertainty(self, rauncertaintymas, decuncertaintymas):
-        self.rauncertainty = np.sqrt(self.rauncertainty**2 + (rauncertaintymas/(15000.0*np.cos(self.position.dec.value)))**2)
+        self.rauncertainty = np.sqrt(self.rauncertainty**2 + (rauncertaintymas/(15000.0*np.cos(self.position.dec.value*np.pi/180)))**2)
         self.decuncertainty = np.sqrt(self.decuncertainty**2 + (decuncertaintymas/1000.0)**2)
 
     def setUncertainty(self, rauncertaintymas, decuncertaintymas):
-        self.rauncertainty = rauncertaintymas/(15000.0*np.cos(self.position.dec.value))
+        self.rauncertainty = rauncertaintymas/(15000.0*np.cos(self.position.dec.value*np.pi/180))
         self.decuncertainty = decuncertaintymas/1000.0
 
     def to_string(self):
@@ -35,13 +35,14 @@ if __name__ == "__main__":
     parser.add_argument('--statisticalsigmara', default=0.5, type=float, help="Standard deviation in mas of the fake observations in R.A.")
     parser.add_argument('--statisticalsigmadec', default=1., type=float, help="Standard deviation in mas of the fake observations in Decl.")
     parser.add_argument('--distribution', default="gaussian", help='Distribution type of the systematic uncertainty to add')
-    parser.add_argument('--extent', default=1.0, type=float, help='Extent or std dev of the systematic uncertainty distribution in milliarcseconds')
-    parser.add_argument('pmparfile', default="", type=str, nargs=1)
+    parser.add_argument('--extentra', default=1.0, type=float, help='Extent or std dev of the systematic uncertainty distribution for R.A. in milliarcseconds')
+    parser.add_argument('--extentdec', default=1.0, type=float, help='Extent or std dev of the systematic uncertainty distribution for Decl. in milliarcseconds')
+    parser.add_argument('pmparfile', default="", type=str, nargs=1, help='The simulated observation file containing ideal positions, no errors')
 
     # Parse the arguments
     args = parser.parse_args()
 
-    # Open the pmpar file
+    # Open the pmpar file that contains the perfect simulated observations (at the ideal positions for each date, given the model)
     lines = open(args.pmparfile[0]).readlines()
 
     # Create a list where we will store the observations
@@ -63,31 +64,34 @@ if __name__ == "__main__":
 
     # Use setUncertainty and perturbposition to set statistical uncertainty and fake a reasonable observation
     for obs in obslist:
-        rg1 = rng.random() #picks a random offset for the RA
-        rg2 = rng.random() #picks a random offset for the Dec
+        rg1 = rng.standard_normal() #picks a random offset for the RA
+        rg2 = rng.standard_normal() #picks a random offset for the Dec
         obs.perturbposition(args.statisticalsigmara*rg1, args.statisticalsigmadec*rg2)
         obs.setUncertainty(args.statisticalsigmara, args.statisticalsigmadec)
 
-    #added in loop for adding in systematic errors
-    for obs in obslist: 
-        systematicra = rng.normal(0,args.extent)#chooses a random number from a normal (gaussian) distribution with args.extent bring 1 standard deviation: for the systematic error offset in the RA
-        systematicdec = rng.normal(0,args.extent) #same thing as the previous line but for Dec
-    # Then write the result back out - first all the "otherlines", then each observation, using the to_string() method
-        obs.perturbposition(args.statisticalsigmara*systematicra, args.statisticalsigmadec*systematicdec)
-
-
-    perturbedout = open(args.pmparfile[0] + ".withsystematic", "w")
+    # At this point, the original (perfect) simulated observations have had gaussian errors added to simulate statistical noise, which also set the simulated uncertainties
+    # Write this out to a file with suffix ".statistical"
+    perturbedout = open(args.pmparfile[0] + ".statistical", "w")
     for line in otherlines:
         perturbedout.write(line)
     for obs in obslist:
         perturbedout.write("{0}\n".format(obs.to_string()))
     perturbedout.close()
 
-    # Now loop through the observations again and add an additional perturbation to the position, based on args.extent and args.distribution
-    # It's fine to just handle distribution == gaussian for now
-    # But don't adjust the uncertainty with setUncertainty
+    # Now we run through a loop adding in systematic errors, which perturb the positions but don't change the simulated uncertainties
+    for obs in obslist: 
+        if args.distribution == "gaussian": # We want the simulated systematic errors to be drawn from a gaussian distribution - args.extent is the standard deviation
+            systematicra = rng.normal(0,args.extentra) # Select a random offset for RA
+            systematicdec = rng.normal(0,args.extentdec) # Same thing as the previous line but for Dec
+        elif args.distribution == "uniform": # We want the simulated systematic errors to be drawn from a uniform distribution
+            systematicra = rng.uniform(-args.extentra, args.extentra)
+            systematicdec = rng.uniform(-args.extentdec, args.extentdec)
+        obs.perturbposition(systematicra, systematicdec) # Perturb the position with the generated number
 
-
-    # Then write this further changed result out into a file called args.pmparfile[0] + ".withsystematic"
-
-
+    # Now write the final simulated observation set out - first all the "otherlines", then each observation, using the to_string() method
+    perturbedout = open(args.pmparfile[0] + ".withsystematic", "w")
+    for line in otherlines:
+        perturbedout.write(line)
+    for obs in obslist:
+        perturbedout.write("{0}\n".format(obs.to_string()))
+    perturbedout.close()
