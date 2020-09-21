@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('--parallax', default=1.0, type=float, help='The true parallax in the simulation pmpar file, in mas')
     parser.add_argument('--pmra', default=10.0, type=float, help='The true proper motion (right ascension) in the simulation pmpar file, in mas/yr')
     parser.add_argument('--pmdec', default=-5.0, type=float, help='The true proper motion (declination) in the simulation pmpar file, in mas/yr')
-    parser.add_argument('--niter', default=1000, type=int, help='Number of repeats to run')
+    parser.add_argument('--niter', default=100, type=int, help='Number of repeats to run')
     parser.add_argument('pmparfile', default="", type=str, nargs=1, help='The simulated observation file containing ideal positions, no errors')
 
     # Parse the arguments
