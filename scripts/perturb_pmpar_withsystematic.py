@@ -5,6 +5,7 @@ import pandas as pd
 from numpy.random import default_rng
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+import bootstrap_pmpar
 
 class Observation:
     def __init__(self, line):
@@ -192,6 +193,9 @@ if __name__ == "__main__":
         # Method #3 requires some trial and error to find the right amount of estimated systematic error to add in quadrature to each observation
         equadresult = fitEQuad(trialobslist, otherlines)
         equadresult.storedata(results["equad"], i)
+
+        # Method #4 bootstrap
+        bootstrap_pmpar.bootstrap_pmpar(trialobslist, 2000, '', True) #this would produce a table of 2000 sets of results
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
