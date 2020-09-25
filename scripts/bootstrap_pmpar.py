@@ -4,9 +4,30 @@ you can streamline it with it code. the functionality can be tested in ipython.
 2. run bootstrap_pmpar.bootstrap_pmpar()\
     according to its usage help (bootstrap_pmpar will call the two other functions).
 """
-import os, sys
+import os, sys, math
 import numpy as np
 from astropy.table import vstack, Table
+def sample2estimate(array1,confidencelevel):
+    array = sorted(array1)
+    CL = confidencelevel
+    if CL<1:
+        SV = int(CL*len(array)) #SV -> significant volume
+    elif CL>=1 and CL<10:
+        CL = math.erf(CL/2**0.5)
+        SV = int(CL*len(array))
+    elif CL>=10:
+        SV = CL    
+    delta = float('inf')
+    for i in range(len(array)-SV-1):
+        diff = array[i+SV] - array[i]
+        if diff < delta:
+            j=i
+            delta = diff
+    confidence_min = array[j]
+    confidence_max = array[j+SV]
+    value = 0.5*(confidence_min+confidence_max)
+    error = 0.5*(confidence_max-confidence_min)
+    return value,error
 def dms2deg(string): #-- convert dd:mm:ss.ssss to dd.dddd
     a = string.split(':')
     b = []
@@ -61,6 +82,7 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
     2. after running this module, a file called .five_parameters.dat would be generated, which stores the parallaxes, proper motions,\
         and reference positions results from pmpar, and can be written anytime;
     3. if you want to build your bootstrap sample with several runs, set overwrite_table to True.
+    4. the returned results are in order: value_PI, error_PI, value_mu_a, error_mu_a, value_mu_d, error_mu_d, value_RA, error_RA, value_Dec, error_Dec
     """
     pulsitions = './.pmpar.in.bootstrap' 
     if not os.path.exists(pmparinfile):
@@ -106,3 +128,13 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
             t0 = Table.read(bootstrapped_five_parameters_table, format='ascii')
             t = vstack([t0, t])
     t.write(bootstrapped_five_parameters_table, format='ascii', overwrite=True)
+    CL = math.erf(1/2**0.5) 
+    for estimate in ['PI', 'mu_a', 'mu_d', 'RA', 'Dec']:
+        exec("[value_%s, error_%s] = sample2estimate(%ss, CL)" % (estimate, 
+        estimate, estimate))
+    print('\n\npi = %f +- %f (mas)' % (value_PI, error_PI))
+    print('mu_a = %f +- %f (mas/yr)' % (value_mu_a, error_mu_a))
+    print('mu_d = %f +- %f (mas/yr)' % (value_mu_d, error_mu_d))
+    print('RA = %f +- %f (deg)' % (value_RA, error_RA))
+    print('Dec = %f +- %f (deg)' % (value_Dec, error_Dec))
+    return value_PI, error_PI, value_mu_a, error_mu_a, value_mu_d, error_mu_d, value_RA, error_RA, value_Dec, error_Dec
