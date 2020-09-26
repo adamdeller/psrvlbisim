@@ -6,6 +6,8 @@ from numpy.random import default_rng
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import bootstrap_pmpar
+import matplotlib
+import matplotlib.pyplot as plt
 
 class Observation:
     def __init__(self, line):
@@ -195,7 +197,7 @@ if __name__ == "__main__":
         equadresult.storedata(results["equad"], i)
 
         # Method #4 bootstrap
-        bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #this would produce a table of 2000 sets of results
+       bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #this would produce a table of 2000 sets of results
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
@@ -204,3 +206,12 @@ if __name__ == "__main__":
         print("Median difference between fitted parallax and actual:", np.median(np.abs(results[method]["Parallax"] - args.parallax)))
         print("Median value of reported uncertainty:", np.median(results[method]["ParallaxUncertainty"]))
         print("Fraction of times that the best-fit was outside 1sigma (which should be around 32% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > results[method]["ParallaxUncertainty"])/float(args.niter), "%")
+        bins = [] 
+        data = (results[method]["Parallax"] - args.parallax)/(results[method]["ParallaxUncertainty"])
+        counts, bins = np.histogram(data)
+        plt.hist(bins[:-1], bins, weights=counts)
+        plt.title("Normalised Errors")
+        plt.xlabel("# of sigma deviated from actual data")
+        plt.ylabel("Counts")
+        plt.savefig("normalised_errors.png")
+
