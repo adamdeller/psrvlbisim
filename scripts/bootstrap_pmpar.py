@@ -59,7 +59,7 @@ def readpmparout(pmparout):
                 exec("%s = %s" % (estimate, line.split('=')[-1].strip().split(' ')[0]))
         for estimate in ['RA', 'Dec  ', 'mu_a', 'mu_d', 'pi']:
             if estimate in line:
-                print line.split('=')[-1].split('+')[0].strip()
+                print(line.split('=')[-1].split('+')[0].strip())
                 exec("%s = line.split('=')[-1].split('+')[0].strip()" % estimate.strip())
                 if estimate in ['RA', 'Dec  ']:
                     exec("%s = dms2deg(%s)" % (estimate.strip(), estimate.strip()))
@@ -121,7 +121,7 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
         print("\x1B[1A\x1B[Kprogress:{0}%".format(round((count + 1) * 1000 / bootstrapruns)/10) + " \r")
         count += 1
     t = Table([PIs, mu_as, mu_ds, RAs, Decs], names=['PI', 'mu_a', 'mu_d', 'RA', 'Dec']) 
-    print t
+    print(t)
     bootstrapped_five_parameters_table = './.five_parameters.dat'
     if not overwrite_table:
         if os.path.exists(bootstrapped_five_parameters_table):
