@@ -197,7 +197,7 @@ if __name__ == "__main__":
         equadresult.storedata(results["equad"], i)
 
         # Method #4 bootstrap
-       bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #this would produce a table of 2000 sets of results
+        bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #produce 5 parameters and their errors
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
