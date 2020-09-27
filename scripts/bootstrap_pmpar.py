@@ -59,7 +59,7 @@ def readpmparout(pmparout):
                 exec("%s = %s" % (estimate, line.split('=')[-1].strip().split(' ')[0]))
         for estimate in ['RA', 'Dec  ', 'mu_a', 'mu_d', 'pi']:
             if estimate in line:
-                print line.split('=')[-1].split('+')[0].strip()
+                print(line.split('=')[-1].split('+')[0].strip())
                 exec("%s = line.split('=')[-1].split('+')[0].strip()" % estimate.strip())
                 if estimate in ['RA', 'Dec  ']:
                     exec("%s = dms2deg(%s)" % (estimate.strip(), estimate.strip()))
@@ -86,7 +86,7 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
     """
     pulsitions = './.pmpar.in.bootstrap' 
     if not os.path.exists(pmparinfile):
-        print("%s does not exists; aborting\n" % pmparinfile)
+        print(("%s does not exists; aborting\n" % pmparinfile))
         sys.exit()
     positions = []
     lines = open(pmparinfile).readlines()
@@ -118,10 +118,10 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
         mu_ds = np.append(mu_ds, mu_d)
         RAs = np.append(RAs, RA)
         Decs = np.append(Decs, Dec)
-        print("\x1B[1A\x1B[Kprogress:{0}%".format(round((count + 1) * 1000 / bootstrapruns)/10) + " \r")
+        print(("\x1B[1A\x1B[Kprogress:{0}%".format(round((count + 1) * 1000 / bootstrapruns)/10) + " \r"))
         count += 1
     t = Table([PIs, mu_as, mu_ds, RAs, Decs], names=['PI', 'mu_a', 'mu_d', 'RA', 'Dec']) 
-    print t
+    print(t)
     bootstrapped_five_parameters_table = './.five_parameters.dat'
     if not overwrite_table:
         if os.path.exists(bootstrapped_five_parameters_table):
@@ -132,9 +132,9 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
     for estimate in ['PI', 'mu_a', 'mu_d', 'RA', 'Dec']:
         exec("[value_%s, error_%s] = sample2estimate(%ss, CL)" % (estimate, 
         estimate, estimate))
-    print('\n\npi = %f +- %f (mas)' % (value_PI, error_PI))
-    print('mu_a = %f +- %f (mas/yr)' % (value_mu_a, error_mu_a))
-    print('mu_d = %f +- %f (mas/yr)' % (value_mu_d, error_mu_d))
-    print('RA = %f +- %f (deg)' % (value_RA, error_RA))
-    print('Dec = %f +- %f (deg)' % (value_Dec, error_Dec))
+    print(('\n\npi = %f +- %f (mas)' % (value_PI, error_PI)))
+    print(('mu_a = %f +- %f (mas/yr)' % (value_mu_a, error_mu_a)))
+    print(('mu_d = %f +- %f (mas/yr)' % (value_mu_d, error_mu_d)))
+    print(('RA = %f +- %f (deg)' % (value_RA, error_RA)))
+    print(('Dec = %f +- %f (deg)' % (value_Dec, error_Dec)))
     return value_PI, error_PI, value_mu_a, error_mu_a, value_mu_d, error_mu_d, value_RA, error_RA, value_Dec, error_Dec
