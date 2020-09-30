@@ -46,7 +46,7 @@ def dms2deg(string): #-- convert dd:mm:ss.ssss to dd.dddd
         degree += b[i-1]
     degree *= sign
     return degree
-def readpmparout(pmparout):
+def readpmparout_python2(pmparout):
     rchsq = 0
     lines = open(pmparout).readlines()
     for line in lines:
@@ -69,6 +69,34 @@ def readpmparout(pmparout):
                 error = line.split('+-')[1].strip().split(' ')[0]
                 exec("error_%s = %s" % (estimate, error))
                 exec("%s = float(%s)" % (estimate, estimate))
+    return RA, Dec, epoch, pi, mu_a, mu_d, error_pi, error_mu_a, error_mu_d, l, b, rchsq
+def readpmparout(pmparout):
+    rchsq = 0
+    lines = open(pmparout).readlines()
+    for line in lines:
+        if 'epoch' in line:
+            epoch = line.split('=')[1].strip()
+        if 'Reduced' in line:
+            rchsq = float(line.split('=')[1].strip())
+        if 'b' in line and 'degrees' in line:
+            b = float(line.split('=')[-1].strip().split(' ')[0])
+        if 'l' in line and 'degrees' in line:
+            l = float(line.split('=')[-1].strip().split(' ')[0])
+        if 'RA' in line:
+            RA = line.split('=')[-1].split('+')[0].strip()
+            RA = dms2deg(RA)
+        if 'Dec  ' in line:
+            Dec = line.split('=')[-1].split('+')[0].strip()
+            Dec = dms2deg(Dec)
+        if 'mu_a' in line:
+            mu_a = float(line.split('=')[-1].split('+')[0].strip())
+            error_mu_a = float(line.split('+-')[1].strip().split(' ')[0])
+        if 'mu_d' in line:
+            mu_d = float(line.split('=')[-1].split('+')[0].strip())
+            error_mu_d = float(line.split('+-')[1].strip().split(' ')[0])
+        if 'pi' in line:
+            pi = float(line.split('=')[-1].split('+')[0].strip())
+            error_pi = float(line.split('+-')[1].strip().split(' ')[0])
     return RA, Dec, epoch, pi, mu_a, mu_d, error_pi, error_mu_a, error_mu_d, l, b, rchsq
 def pulsitions2paras(pulsitions):
     pmparout = './.pmpar.out'
@@ -129,9 +157,16 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
             t = vstack([t0, t])
     t.write(bootstrapped_five_parameters_table, format='ascii', overwrite=True)
     CL = math.erf(1/2**0.5) 
-    for estimate in ['PI', 'mu_a', 'mu_d', 'RA', 'Dec']:
-        exec("[value_%s, error_%s] = sample2estimate(%ss, CL)" % (estimate, 
-        estimate, estimate))
+    #for estimate in ['PI', 'mu_a', 'mu_d', 'RA', 'Dec']:
+    #    exec("[value_%s, error_%s] = sample2estimate(%ss, CL)" % (estimate, 
+    #    estimate, estimate))
+    [value_PI, error_PI] = sample2estimate(PIs, CL)
+    [value_mu_a, error_mu_a] = sample2estimate(mu_as, CL)
+    [value_mu_d, error_mu_d] = sample2estimate(mu_ds, CL)
+    [value_RA, error_RA] = sample2estimate(RAs, CL)
+    [value_Dec, error_Dec] = sample2estimate(Decs, CL)
+
+    
     print(('\n\npi = %f +- %f (mas)' % (value_PI, error_PI)))
     print(('mu_a = %f +- %f (mas/yr)' % (value_mu_a, error_mu_a)))
     print(('mu_d = %f +- %f (mas/yr)' % (value_mu_d, error_mu_d)))
