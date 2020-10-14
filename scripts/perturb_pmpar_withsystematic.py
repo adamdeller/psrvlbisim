@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     # Create some places to store results from simulations
     colnames = ["Parallax", "ParallaxUncertainty", "PMRA", "PMRAUncertainty", "PMDec", "PMDecUncertainty"] # This is what we will store from each trial
-    systematiccorrectionmethods = ["none", "efac", "equad"] # These are the different methods of compensating systematic errors: nothing, unity chi sq (scale factor), unity chi sq (quadrature).  More will be added later, including bootstrap.
+    systematiccorrectionmethods = ["none", "efac", "equad", "bootstrap"] # These are the different methods of compensating systematic errors: nothing, unity chi sq (scale factor), unity chi sq (quadrature).  More will be added later, including bootstrap.
     results = {}
     for method in systematiccorrectionmethods:
         results[method] = pd.DataFrame(np.zeros(len(colnames) * args.niter).reshape(args.niter, len(colnames)), columns=colnames)
@@ -172,7 +172,8 @@ if __name__ == "__main__":
                 systematicra = rng.uniform(-args.extentra, args.extentra)
                 systematicdec = rng.uniform(-args.extentdec, args.extentdec)
             obs.perturbposition(systematicra, systematicdec) # Perturb the position with the generated number
-    
+        
+
         # Now write the final simulated observation set out - first all the "otherlines", then each observation, using the to_string() method
         writePmparFile(args.pmparfile[0] + ".withsystematic", trialobslist, otherlines)
     
@@ -198,6 +199,9 @@ if __name__ == "__main__":
 
         # Method #4 bootstrap
         bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #produce 5 parameters and their errors
+        results["bootstrap"]["Parallax"], results["bootstrap"]["ParallaxUncertainty"], results["bootstrap"]["PMRA"],\
+            results["bootstrap"]["PMRAUncertainty"], results["bootstrap"]["PMDec"], results["bootstrap"]["PMDecUncertainty"],\
+            junk1, junk2, junk3, junk4 = bootstrap_results
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
