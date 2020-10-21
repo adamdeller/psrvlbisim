@@ -77,6 +77,7 @@ class PmparFitResult:
         df['PMRAUncertainty'][dfindex] = self.pmramaserr
         df['PMDec'][dfindex] = self.pmdecmas
         df['PMDecUncertainty'][dfindex] = self.pmdecmaserr
+        df['RChiSq'][dfindex] = self.rchisq
 
 def writePmparFile(pmparfilename, obslist, otherlines):
     pmparout = open(pmparfilename, "w")
@@ -133,7 +134,7 @@ if __name__ == "__main__":
     rng = default_rng() # rng is your random number generator.  See e.g. https://numpy.org/doc/stable/reference/random/index.html for how to use it.
 
     # Create some places to store results from simulations
-    colnames = ["Parallax", "ParallaxUncertainty", "PMRA", "PMRAUncertainty", "PMDec", "PMDecUncertainty"] # This is what we will store from each trial
+    colnames = ["Parallax", "ParallaxUncertainty", "PMRA", "PMRAUncertainty", "PMDec", "PMDecUncertainty", "RChiSq"] # This is what we will store from each trial
     systematiccorrectionmethods = ["none", "efac", "equad", "bootstrap"] # These are the different methods of compensating systematic errors: nothing, unity chi sq (scale factor), unity chi sq (quadrature).  More will be added later, including bootstrap.
     if args.onlysimple:
         systematiccorrectionmethods = ["none", "efac"] # Skip the equad and bootstrap
@@ -151,7 +152,8 @@ if __name__ == "__main__":
 
     # Now we loop over niter times, creating a new fake observation each time
     for i in range(args.niter):
-        print(i)
+        if (10*(i + 1)) % args.niter == 0:
+            print((100*(i + 1)) // args.niter, "% done")
         # Create a copy of the original, unperturbed observations to work on in this trial
         trialobslist = copy.deepcopy(obslist)
 
@@ -196,6 +198,7 @@ if __name__ == "__main__":
         results["efac"]["ParallaxUncertainty"][i] *= np.sqrt(rawresult.rchisq)
         results["efac"]["PMRAUncertainty"][i] *= np.sqrt(rawresult.rchisq)
         results["efac"]["PMDecUncertainty"][i] *= np.sqrt(rawresult.rchisq)
+        results["efac"]["RChiSq"][i] = 1.0
 
         if not args.onlysimple:
             # Method #3 requires some trial and error to find the right amount of estimated systematic error to add in quadrature to each observation
@@ -207,6 +210,7 @@ if __name__ == "__main__":
             results["bootstrap"]["Parallax"][i], results["bootstrap"]["ParallaxUncertainty"][i], results["bootstrap"]["PMRA"][i],\
                 results["bootstrap"]["PMRAUncertainty"][i], results["bootstrap"]["PMDec"][i], results["bootstrap"]["PMDecUncertainty"][i],\
                 junk1, junk2, junk3, junk4 = bootstrap_results
+            results["bootstrap"]["RChiSq"][i] = 1.0
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
@@ -217,6 +221,11 @@ if __name__ == "__main__":
         print("Fraction of times that the best-fit was outside 1sigma (which should be around 32% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > results[method]["ParallaxUncertainty"])/float(args.niter), "%")
         print("Fraction of times that the best-fit was outside 1sigma (which should be around 5% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > 2*results[method]["ParallaxUncertainty"])/float(args.niter), "%")
         print("Fraction of times that the best-fit was outside 1sigma (which should be around 0.3% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > 3*results[method]["ParallaxUncertainty"])/float(args.niter), "%")
+        if method == "none":
+            print("Fraction of times that the reduced chi-squared of the best fit was less than 1.5:",  100*np.sum(results[method]["RChiSq"] < 1.5)/float(args.niter), "%")
+            offset = np.abs(results[method]["Parallax"] - args.parallax)/results[method]["ParallaxUncertainty"]
+            plausible = offset[results[method]["RChiSq"] < 1.5]
+            print("Median underestimation of the uncertainty during those cases was a factor of", np.median(plausible))
         bins = [] 
         data = (results[method]["Parallax"] - args.parallax)/(results[method]["ParallaxUncertainty"])
         counts, bins = np.histogram(data)
