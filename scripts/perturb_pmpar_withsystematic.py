@@ -114,6 +114,7 @@ if __name__ == "__main__":
     parser.add_argument('--pmra', default=10.0, type=float, help='The true proper motion (right ascension) in the simulation pmpar file, in mas/yr')
     parser.add_argument('--pmdec', default=-5.0, type=float, help='The true proper motion (declination) in the simulation pmpar file, in mas/yr')
     parser.add_argument('--niter', default=100, type=int, help='Number of repeats to run')
+    parser.add_argument('--onlysimple', default=False, action="store_true", help='Skip the EQUAD and BOOTSTRAP approaches for speed')
     parser.add_argument('pmparfile', default="", type=str, nargs=1, help='The simulated observation file containing ideal positions, no errors')
 
     # Parse the arguments
@@ -134,6 +135,8 @@ if __name__ == "__main__":
     # Create some places to store results from simulations
     colnames = ["Parallax", "ParallaxUncertainty", "PMRA", "PMRAUncertainty", "PMDec", "PMDecUncertainty"] # This is what we will store from each trial
     systematiccorrectionmethods = ["none", "efac", "equad", "bootstrap"] # These are the different methods of compensating systematic errors: nothing, unity chi sq (scale factor), unity chi sq (quadrature).  More will be added later, including bootstrap.
+    if args.onlysimple:
+        systematiccorrectionmethods = ["none", "efac"] # Skip the equad and bootstrap
     results = {}
     for method in systematiccorrectionmethods:
         results[method] = pd.DataFrame(np.zeros(len(colnames) * args.niter).reshape(args.niter, len(colnames)), columns=colnames)
@@ -194,15 +197,16 @@ if __name__ == "__main__":
         results["efac"]["PMRAUncertainty"][i] *= np.sqrt(rawresult.rchisq)
         results["efac"]["PMDecUncertainty"][i] *= np.sqrt(rawresult.rchisq)
 
-        # Method #3 requires some trial and error to find the right amount of estimated systematic error to add in quadrature to each observation
-        equadresult = fitEQuad(trialobslist, otherlines)
-        equadresult.storedata(results["equad"], i)
+        if not args.onlysimple:
+            # Method #3 requires some trial and error to find the right amount of estimated systematic error to add in quadrature to each observation
+            equadresult = fitEQuad(trialobslist, otherlines)
+            equadresult.storedata(results["equad"], i)
 
-        # Method #4 bootstrap
-        bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(args.pmparfile[0] + ".withsystematic", 1000, '', True) #produce 5 parameters and their errors
-        results["bootstrap"]["Parallax"][i], results["bootstrap"]["ParallaxUncertainty"][i], results["bootstrap"]["PMRA"][i],\
-            results["bootstrap"]["PMRAUncertainty"][i], results["bootstrap"]["PMDec"][i], results["bootstrap"]["PMDecUncertainty"][i],\
-            junk1, junk2, junk3, junk4 = bootstrap_results
+            # Method #4 bootstrap
+            bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(args.pmparfile[0] + ".withsystematic", 1000, '', True) #produce 5 parameters and their errors
+            results["bootstrap"]["Parallax"][i], results["bootstrap"]["ParallaxUncertainty"][i], results["bootstrap"]["PMRA"][i],\
+                results["bootstrap"]["PMRAUncertainty"][i], results["bootstrap"]["PMDec"][i], results["bootstrap"]["PMDecUncertainty"][i],\
+                junk1, junk2, junk3, junk4 = bootstrap_results
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
@@ -211,6 +215,8 @@ if __name__ == "__main__":
         print("Median difference between fitted parallax and actual:", np.median(np.abs(results[method]["Parallax"] - args.parallax)))
         print("Median value of reported uncertainty:", np.median(results[method]["ParallaxUncertainty"]))
         print("Fraction of times that the best-fit was outside 1sigma (which should be around 32% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > results[method]["ParallaxUncertainty"])/float(args.niter), "%")
+        print("Fraction of times that the best-fit was outside 1sigma (which should be around 5% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > 2*results[method]["ParallaxUncertainty"])/float(args.niter), "%")
+        print("Fraction of times that the best-fit was outside 1sigma (which should be around 0.3% if correctly estimated)", 100*np.sum(np.abs(results[method]["Parallax"] - args.parallax) > 3*results[method]["ParallaxUncertainty"])/float(args.niter), "%")
         bins = [] 
         data = (results[method]["Parallax"] - args.parallax)/(results[method]["ParallaxUncertainty"])
         counts, bins = np.histogram(data)
