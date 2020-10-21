@@ -198,9 +198,9 @@ if __name__ == "__main__":
         equadresult.storedata(results["equad"], i)
 
         # Method #4 bootstrap
-        bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(trialobslist, 1000, '', True) #produce 5 parameters and their errors
-        results["bootstrap"]["Parallax"], results["bootstrap"]["ParallaxUncertainty"], results["bootstrap"]["PMRA"],\
-            results["bootstrap"]["PMRAUncertainty"], results["bootstrap"]["PMDec"], results["bootstrap"]["PMDecUncertainty"],\
+        bootstrap_results = bootstrap_pmpar.bootstrap_pmpar(args.pmparfile[0] + ".withsystematic", 1000, '', True) #produce 5 parameters and their errors
+        results["bootstrap"]["Parallax"][i], results["bootstrap"]["ParallaxUncertainty"][i], results["bootstrap"]["PMRA"][i],\
+            results["bootstrap"]["PMRAUncertainty"][i], results["bootstrap"]["PMDec"][i], results["bootstrap"]["PMDecUncertainty"][i],\
             junk1, junk2, junk3, junk4 = bootstrap_results
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
