@@ -81,7 +81,7 @@ class PmparFitResult:
 def writePmparFile(pmparfilename, obslist, otherlines):
     pmparout = open(pmparfilename, "w")
     for line in otherlines:
-        pmparoutout.write(line)
+        pmparout.write(line)
     for obs in obslist:
         pmparout.write("{0}\n".format(obs.to_string()))
     pmparout.close()
@@ -148,6 +148,7 @@ if __name__ == "__main__":
 
     # Now we loop over niter times, creating a new fake observation each time
     for i in range(args.niter):
+        print(i)
         # Create a copy of the original, unperturbed observations to work on in this trial
         trialobslist = copy.deepcopy(obslist)
 
