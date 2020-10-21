@@ -257,10 +257,16 @@ if __name__ == "__main__":
     plt.savefig("normalised_errors.png")
 
     # Finally, make a plot of the very last iteration
-    os.system("pmpar {0} -om".format(args.pmparfile[0]))
+    os.system("pmpar {0} > /dev/null".format(args.pmparfile[0]))
     sim = PmparOutputResults("pmpar_e", "pmpar_t") # Save the results of the perfect simulated data, no perturbations
 
-    os.system("pmpar {0}.withsystematic -om".format(args.pmparfile[0]))
+    #fixinglines = copy.deepcopy(otherlines)
+    #fixinglines.append("pi = {0}\n".format(rawresult.px))
+    #fixinglines.append("mu_a = {0}\n".format(args.pmra))
+    #fixinglines.append("mu_d = {0}\n".format(args.pmdec))
+    #writePmparFile("forplot.pmpar.in", trialobslist, fixinglines)
+    #os.system("pmpar forplot.pmpar.in -om")
+    os.system("pmpar {0}.withsystematic > /dev/null".format(args.pmparfile[0]))
     rawobs = PmparOutputResults("pmpar_e", "pmpar_t") # And now the perturbed data
 
     # Create a figure and plot the perfect data and the perturbed data onto it
