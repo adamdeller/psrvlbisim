@@ -118,6 +118,7 @@ def bootstrap_pmpar(pmparinfile, bootstrapruns, priors='', overwrite_table=False
         sys.exit()
     positions = []
     lines = open(pmparinfile).readlines()
+    epochline = "epoch = 58500\n"
     for line in lines:
         if 'epoch' in line:
             epochline = line
