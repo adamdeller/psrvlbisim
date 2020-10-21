@@ -33,6 +33,27 @@ class Observation:
         decstring = self.position.to_string(decimal=False,sep=':',unit=u.deg, pad=True,precision=7).split()[1]
         return("{0:0.4f} {1} {2} {3} {4}".format(self.date, rastring, self.rauncertainty, decstring, self.decuncertainty))
 
+class PmparOutputResults:
+    def __init__(self, obsfile, predictfile):
+        if not os.path.exists(obsfile):
+            print(obsfile + " doesn't exist, aborting)")
+            sys.exit()
+        if not os.path.exists(predictfile):
+            print(predictfile + " doesn't exist, aborting)")
+            sys.exit()
+        self.obscolumns = ['MJD','RA_OFF_MEAS', 'RA_UNCERTAINTY', 'DEC_OFF_MEAS', 'DEC_UNCERTAINTY', 'RA_OFF_PRED', 'DEC_OFF_PRED']
+        self.obsdata = pd.read_csv(obsfile, sep=' ', names=self.obscolumns)
+
+        self.predictcolumns = ['MJD','RA_OFF', 'DEC_OFF']
+        self.predictdata = pd.read_csv(predictfile, sep=' ', names=self.predictcolumns)
+
+    def plot(self, axes, plotobs, predlabel, obslabel=None):
+        if plotobs:
+            axes.plot(self.predictdata['MJD'], self.predictdata['RA_OFF'], label=predlabel, linestyle='solid', color='r')
+            axes.errorbar(self.obsdata['MJD'], self.obsdata['RA_OFF_MEAS'], yerr=self.obsdata['RA_UNCERTAINTY'], label=obslabel, color='b', linestyle='None', capsize=6)
+        else:
+            axes.plot(self.predictdata['MJD'], self.predictdata['RA_OFF'], label=predlabel, linestyle='dashed', color='k')
+
 class PmparFitResult:
     def __init__(self, filename, nepochs):
         self.nepochs = nepochs
@@ -233,5 +254,22 @@ if __name__ == "__main__":
         plt.title("Normalised Errors")
         plt.xlabel("# of sigma deviated from actual data")
         plt.ylabel("Counts")
-        plt.savefig("normalised_errors.png")
+    plt.savefig("normalised_errors.png")
 
+    # Finally, make a plot of the very last iteration
+    os.system("pmpar {0} -om".format(args.pmparfile[0]))
+    sim = PmparOutputResults("pmpar_e", "pmpar_t") # Save the results of the perfect simulated data, no perturbations
+
+    os.system("pmpar {0}.withsystematic -om".format(args.pmparfile[0]))
+    rawobs = PmparOutputResults("pmpar_e", "pmpar_t") # And now the perturbed data
+
+    # Create a figure and plot the perfect data and the perturbed data onto it
+    fig = plt.figure()
+    axes = fig.add_subplot(1,1,1)
+    sim.plot(axes, False, "Actual model")
+    rawobs.plot(axes, True, "Fitted model", "Simulated observations")
+    axes.set_xlabel("Observing day (MJD)")
+    axes.set_ylabel("R.A. offset")
+    fig.legend(framealpha=1.0)
+    fig.tight_layout()
+    fig.savefig("exampleplot.png", bbox_inches='tight')
