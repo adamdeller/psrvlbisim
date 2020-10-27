@@ -114,6 +114,8 @@ def fitEQuad(obslist, otherlines):
     equadtrialresult = PmparFitResult("pmpar.results.trial", len(obslist))
     sysestimate = 0.0
     scalefactor = 0.1 # Set this to a reasonable number so that we don't get out of control swings
+    if equadtrialresult.rchisq < 1.0:
+        return equadtrialresult
     while np.abs(equadtrialresult.rchisq - 1.0) > 0.0001: 
         sysestimate = sysestimate + (equadtrialresult.rchisq - 1.0)*scalefactor
         trialobslist = copy.deepcopy(obslist)
