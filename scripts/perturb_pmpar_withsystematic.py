@@ -258,10 +258,10 @@ if __name__ == "__main__":
             minbin = bins[0]
         if bins[-1] > maxbin:
             maxbin = bins[-1]
-        plt.hist(bins[:-1], bins, weights=counts/args.niter)
+        plt.hist(bins[:-1], bins, weights=counts/(args.niter*(bins[1] - bins[0])))
         plt.title("Normalised Errors")
         plt.xlabel("# of sigma deviated from actual data")
-        plt.ylabel("Counts")
+        plt.ylabel("Probability density")
     gaussx = np.linspace(minbin, maxbin, 200)
     gaussy = (1/(np.sqrt(2*np.pi))) * np.exp(-0.5*np.power(gaussx, 2))
     plt.plot(gaussx, gaussy, linestyle='solid', color='k')
