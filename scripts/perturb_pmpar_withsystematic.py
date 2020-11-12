@@ -237,6 +237,8 @@ if __name__ == "__main__":
 
     # Now that we're done, let's print some summary statistics.  Focus just on parallax now (can do others later)
     print("PARALLAX")
+    minbin = 0
+    maxbin = 0
     for method in systematiccorrectionmethods:
         print("\n", method)
         print("Median difference between fitted parallax and actual:", np.median(np.abs(results[method]["Parallax"] - args.parallax)))
@@ -252,10 +254,17 @@ if __name__ == "__main__":
         bins = [] 
         data = (results[method]["Parallax"] - args.parallax)/(results[method]["ParallaxUncertainty"])
         counts, bins = np.histogram(data)
-        plt.hist(bins[:-1], bins, weights=counts)
+        if bins[0] < minbin:
+            minbin = bins[0]
+        if bins[-1] > maxbin:
+            maxbin = bins[-1]
+        plt.hist(bins[:-1], bins, weights=counts/args.niter)
         plt.title("Normalised Errors")
         plt.xlabel("# of sigma deviated from actual data")
         plt.ylabel("Counts")
+    gaussx = np.linspace(minbin, maxbin, 200)
+    gaussy = (1/(np.sqrt(2*np.pi))) * np.exp(-0.5*np.power(gaussx, 2))
+    plt.plot(gaussx, gaussy, linestyle='solid', color='k')
     plt.savefig("normalised_errors.png")
 
     # Finally, make a plot of the very last iteration
