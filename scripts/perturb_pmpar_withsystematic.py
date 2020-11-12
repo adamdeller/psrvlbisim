@@ -253,7 +253,12 @@ if __name__ == "__main__":
             print("Median underestimation of the uncertainty during those cases was a factor of", np.median(plausible))
         bins = [] 
         data = (results[method]["Parallax"] - args.parallax)/(results[method]["ParallaxUncertainty"])
-        counts, bins = np.histogram(data)
+        nbins = 10
+        if args.niter > 1000:
+            nbins = 16
+        if args.niter > 5000:
+            nbins = 24
+        counts, bins = np.histogram(data, bins=nbins)
         if bins[0] < minbin:
             minbin = bins[0]
         if bins[-1] > maxbin:
